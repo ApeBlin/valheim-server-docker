@@ -24,7 +24,7 @@ if [ "$VALHEIM_PLUS" = true ]; then
     export DOORSTOP_CORLIB_OVERRIDE_PATH="./unstripped_corlib"
     export LD_LIBRARY_PATH="$vp_install_path/linux64/:$vp_install_path/doorstop_libs/"
     SERVER_LD_PRELOAD=libdoorstop_x64.so
-    valheim_server="$vp_install_path/valheim_server.x86_64"
+    valheim_server="$vp_install_path/start_server.sh"
     if [ -z "$SERVER_PASS" ]; then
         password_args=()
     fi
@@ -37,7 +37,7 @@ elif [ "$BEPINEX" = true ]; then
     export DOORSTOP_CORLIB_OVERRIDE_PATH="./unstripped_corlib"
     export LD_LIBRARY_PATH="$bepinex_install_path/linux64/:$bepinex_install_path/doorstop_libs/"
     SERVER_LD_PRELOAD=libdoorstop_x64.so
-    valheim_server="$bepinex_install_path/valheim_server.x86_64"
+    valheim_server="$bepinex_install_path/start_server.sh"
     if [ -z "$SERVER_PASS" ]; then
         password_args=()
     fi
@@ -46,15 +46,13 @@ else
     cd "$valheim_install_path" || fatal "Could not cd $valheim_install_path"
     export LD_LIBRARY_PATH="$valheim_install_path/linux64/"
     SERVER_LD_PRELOAD=""
-    valheim_server="$valheim_install_path/valheim_server.x86_64"
+    valheim_server="$valheim_install_path/start_server.sh"
 fi
-
 
 main() {
     wait_for_server_download
     run_server
 }
-
 
 wait_for_server_download() {
     while :; do
@@ -67,11 +65,6 @@ wait_for_server_download() {
     done
 }
 
-
-# This runs after server start and waits for the
-# config files to either exist or for the server
-# to create them so their access permissions can
-# be adjusted to the proper values.
 ensure_permissions_after_start() {
     while :; do
         if [ -f "/config/adminlist.txt" ]; then
@@ -82,7 +75,6 @@ ensure_permissions_after_start() {
         fi
     done
 }
-
 
 wait_for_server_listening() {
     pre_server_listening_hook
@@ -99,7 +91,6 @@ wait_for_server_listening() {
         fi
     done
 }
-
 
 run_server() {
     pre_server_run_hook
@@ -131,7 +122,6 @@ run_server() {
     exit 0
 }
 
-
 cleanup() {
     if [ -n "${permissions_wait_pid:-}" ] && [ -d "/proc/$permissions_wait_pid" ]; then
         kill -TERM $permissions_wait_pid
@@ -142,16 +132,11 @@ cleanup() {
     clear_lock "$valheim_server_pidfile"
 }
 
-
-# This function gets the servers stdout/stderr
-# output piped into. It allows for filtering
-# of unwanted debug log messages.
 filter() {
     unset LD_LIBRARY_PATH
     unset LD_PRELOAD
     "$cmd_valheim_logfilter" -logtostderr -v "$VALHEIM_LOG_FILTER_VERBOSE"
 }
-
 
 pre_server_run_hook() {
     if [ -n "$PRE_SERVER_RUN_HOOK" ]; then
@@ -159,7 +144,6 @@ pre_server_run_hook() {
         eval "$PRE_SERVER_RUN_HOOK"
     fi
 }
-
 
 post_server_run_hook() {
     if [ -n "$POST_SERVER_RUN_HOOK" ]; then
@@ -181,7 +165,6 @@ post_server_listening_hook() {
         eval "$POST_SERVER_LISTENING_HOOK"
     fi
 }
-
 
 shutdown() {
     debug "Received signal to shut down valheim-server"
@@ -213,7 +196,6 @@ shutdown() {
     done
 }
 
-
 pre_server_shutdown_hook() {
     if [ -n "$PRE_SERVER_SHUTDOWN_HOOK" ]; then
         info "Running pre server shutdown hook: $PRE_SERVER_SHUTDOWN_HOOK"
@@ -221,14 +203,12 @@ pre_server_shutdown_hook() {
     fi
 }
 
-
 post_server_shutdown_hook() {
     if [ -n "$POST_SERVER_SHUTDOWN_HOOK" ]; then
         info "Running post server shutdown hook: $POST_SERVER_SHUTDOWN_HOOK"
         eval "$POST_SERVER_SHUTDOWN_HOOK"
     fi
 }
-
 
 trap shutdown SIGINT SIGTERM
 main
