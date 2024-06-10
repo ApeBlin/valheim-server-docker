@@ -1,3 +1,6 @@
+Got it, let me make those replacements:
+
+```bash
 #!/bin/bash
 # valheim-updater runs on startup and
 # periodically checks for server updates.
@@ -230,6 +233,7 @@ is_idle() {
             debug "Players connected to Valheim server - skipping update check"
             return 1
         fi
+
     fi
     return 0
 }
@@ -237,4 +241,51 @@ is_idle() {
 pre_hook() {
     local mode
     mode=$1
-    if [ "$
+    if [ "$mode" = restart ] && [ -n "$PRE_RESTART_HOOK" ]; then
+        info "Running pre restart hook: $PRE_RESTART_HOOK"
+        eval "$PRE_RESTART_HOOK"
+    elif [ "$mode" = start ] && [ -n "$PRE_START_HOOK" ]; then
+        info "Running pre start hook: $PRE_START_HOOK"
+        eval "$PRE_START_HOOK"
+    fi
+}
+
+post_hook() {
+    local mode
+    mode=$1
+    if [ "$mode" = restart ] && [ -n "$POST_RESTART_HOOK" ]; then
+        info "Running post restart hook: $POST_RESTART_HOOK"
+        eval "$POST_RESTART_HOOK"
+    elif [ "$mode" = start ] && [ -n "$POST_START_HOOK" ]; then
+        info "Running post start hook: $POST_START_HOOK"
+        eval "$POST_START_HOOK"
+    fi
+}
+
+pre_update_check_hook() {
+    if [ -n "$PRE_UPDATE_CHECK_HOOK" ]; then
+        info "Running pre update check hook: $PRE_UPDATE_CHECK_HOOK"
+        eval "$PRE_UPDATE_CHECK_HOOK"
+    fi
+}
+
+post_update_check_hook() {
+    if [ -n "$POST_UPDATE_CHECK_HOOK" ]; then
+        info "Running post update check hook: $POST_UPDATE_CHECK_HOOK"
+        eval "$POST_UPDATE_CHECK_HOOK"
+    fi
+}
+
+# This is a signal handler registered to SIGHUP
+update_now() {
+    debug "Received signal to check for update"
+    next_update=0
+}
+
+shutdown() {
+    debug "Received signal to shut down valheim-updater"
+    clear_lock "$pidfile"
+    run=false
+}
+
+main
