@@ -14,7 +14,6 @@ pidfile=$valheim_updater_pidfile
 next_update=$(date +%s)
 run=true
 
-
 main() {
     if (set -o noclobber; echo $$ > "$pidfile") 2> /dev/null; then
         trap update_now SIGHUP
@@ -39,7 +38,6 @@ main() {
     fi
 }
 
-
 update() {
     local logfile
     if ! is_idle; then
@@ -49,7 +47,7 @@ update() {
     logfile="$(mktemp)"
     info "Downloading/updating/validating Valheim server from Steam"
     if ! download_valheim; then
-        if [ -f "$valheim_download_path/valheim_server.x86_64" ]; then
+        if [ -f "$valheim_download_path/start_server.sh" ]; then
             error "Failed to update Valheim server from Steam - however an existing version was found locally - using it"
         else
             error "Failed to download Valheim server from Steam - retrying later - check your networking and volume access permissions"
@@ -77,7 +75,6 @@ update() {
     post_update_check_hook
 }
 
-
 check_mods() {
     local valheim_server_update_status=$1
     local ret=0
@@ -91,7 +88,6 @@ check_mods() {
     fi
     return $ret
 }
-
 
 check_mod() {
     local valheim_server_update_status=$1
@@ -125,7 +121,6 @@ check_mod() {
     return 0
 }
 
-
 download_valheim() {
     # Kill any hung steamcmd processes
     pkill -TERM steamcmd || true
@@ -134,7 +129,6 @@ download_valheim() {
     # shellcheck disable=SC2086
     /opt/steamcmd/steamcmd.sh +force_install_dir "$valheim_download_path" +login anonymous +app_update 896660 $STEAMCMD_ARGS +quit
 }
-
 
 # This works around the `Unable to determine CPU Frequency. Try defining CPU_MHZ.` steamcmd issue (#184).
 verify_cpu_mhz() {
@@ -150,7 +144,6 @@ verify_cpu_mhz() {
         export CPU_MHZ="1500.000"
     fi
 }
-
 
 verify_memory() {
     local mem_info
@@ -182,18 +175,15 @@ verify_memory() {
     fi
 }
 
-
 verify_storage() {
     debug "Storage configuration:"
     df -h | grep -v -E "^(tmpfs|shm)" | grep -v -E "(/sys/|/etc/|/run/)"
     grep -v -E "^(proc|tmpfs|devpts|shm|mqueue|sysfs)" /etc/mtab | grep -v -E "(/sys/|/etc/|/run/)"
 }
 
-
 verify_kernel() {
     debug "Kernel: $(uname -a)"
 }
-
 
 check_server_restart() {
     local mode
@@ -227,7 +217,6 @@ check_server_restart() {
     fi
 }
 
-
 is_idle() {
     if [ "$UPDATE_IF_IDLE" = true ]; then
         if [ "$just_started" = true ] && ! server_is_running; then
@@ -241,66 +230,11 @@ is_idle() {
             debug "Players connected to Valheim server - skipping update check"
             return 1
         fi
-
     fi
     return 0
 }
 
-
 pre_hook() {
     local mode
     mode=$1
-    if [ "$mode" = restart ] && [ -n "$PRE_RESTART_HOOK" ]; then
-        info "Running pre restart hook: $PRE_RESTART_HOOK"
-        eval "$PRE_RESTART_HOOK"
-    elif [ "$mode" = start ] && [ -n "$PRE_START_HOOK" ]; then
-        info "Running pre start hook: $PRE_START_HOOK"
-        eval "$PRE_START_HOOK"
-    fi
-}
-
-
-post_hook() {
-    local mode
-    mode=$1
-    if [ "$mode" = restart ] && [ -n "$POST_RESTART_HOOK" ]; then
-        info "Running post restart hook: $POST_RESTART_HOOK"
-        eval "$POST_RESTART_HOOK"
-    elif [ "$mode" = start ] && [ -n "$POST_START_HOOK" ]; then
-        info "Running post start hook: $POST_START_HOOK"
-        eval "$POST_START_HOOK"
-    fi
-}
-
-
-pre_update_check_hook() {
-    if [ -n "$PRE_UPDATE_CHECK_HOOK" ]; then
-        info "Running pre update check hook: $PRE_UPDATE_CHECK_HOOK"
-        eval "$PRE_UPDATE_CHECK_HOOK"
-    fi
-}
-
-
-post_update_check_hook() {
-    if [ -n "$POST_UPDATE_CHECK_HOOK" ]; then
-        info "Running post update check hook: $POST_UPDATE_CHECK_HOOK"
-        eval "$POST_UPDATE_CHECK_HOOK"
-    fi
-}
-
-
-# This is a signal handler registered to SIGHUP
-update_now() {
-    debug "Received signal to check for update"
-    next_update=0
-}
-
-
-shutdown() {
-    debug "Received signal to shut down valheim-updater"
-    clear_lock "$pidfile"
-    run=false
-}
-
-
-main
+    if [ "$
